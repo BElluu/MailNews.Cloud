@@ -1,12 +1,12 @@
-package Service
+package services
 
 import (
-	"MailNews.Subscriber/Common/Validator"
+	"MailNews.Subscriber/common/validator"
 	"errors"
 )
 
 func Subscribe(email string) (bool, error) {
-	if EmailValidator.Validate(email) {
+	if Email.IsValid(email) {
 		return true, nil
 	}
 	return false, errors.New("email address is not valid")
