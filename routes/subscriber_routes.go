@@ -12,10 +12,16 @@ func SubscriberRoute(router *gin.Engine) {
 		})
 	})
 
-	email := "bkomendarczuk@gmail.com"
-	router.GET("/test", func(c *gin.Context) {
+	router.GET("/subscribe/:email", func(c *gin.Context) {
+		email := c.Param("email")
 		_, err := services.Subscribe(email)
 		if err != nil {
+			c.JSON(400, gin.H{
+				"error": err.Error(),
+			})
+			c.JSON(200, gin.H{
+				"Status": "Awesome. W8 for best newsletter ever!",
+			})
 			return
 		}
 	})
