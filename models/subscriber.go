@@ -1,5 +1,9 @@
 package models
 
 type Subscriber struct {
-	Email string `json:"email"`
+	//SubId          int    `json:"sub-id"`
+	Email          string `json:"email"`
+	ActivateURL    string `json:"activate-url"`
+	UnSubscribeURL string `json:"un-subscribe-url"`
+	IsActive       bool   `json:"is-active"`
 }

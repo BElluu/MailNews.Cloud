@@ -1,7 +1,9 @@
 package database
 
 import (
+	"MailNews.Subscriber/models"
 	"context"
+	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
@@ -68,25 +70,71 @@ func buildCreateTableInput(tableName string) *dynamodb.CreateTableInput {
 	return &dynamodb.CreateTableInput{
 		AttributeDefinitions: []types.AttributeDefinition{
 			{
-				AttributeName: aws.String("PK"),
+				AttributeName: aws.String("Email"),
 				AttributeType: types.ScalarAttributeTypeS,
 			},
-			{
-				AttributeName: aws.String("SK"),
-				AttributeType: types.ScalarAttributeTypeS,
-			},
+			/*			{
+							AttributeName: aws.String("ActivateURL"),
+							AttributeType: types.ScalarAttributeTypeS,
+						},
+						{
+							AttributeName: aws.String("UnSubscribeURL"),
+							AttributeType: types.ScalarAttributeTypeS,
+						},*/
+			/*			{
+						AttributeName: aws.String("IsActive"),
+						AttributeType: types.ScalarAttributeTypeS,
+					},*/
 		},
 		KeySchema: []types.KeySchemaElement{
 			{
-				AttributeName: aws.String("PK"),
+				AttributeName: aws.String("Email"),
 				KeyType:       types.KeyTypeHash,
 			},
-			{
-				AttributeName: aws.String("SK"),
-				KeyType:       types.KeyTypeRange,
-			},
+			/*			{
+							AttributeName: aws.String("ActivateURL"),
+							KeyType:       types.KeyTypeHash,
+						},
+						{
+							AttributeName: aws.String("UnSubscribeURL"),
+							KeyType:       types.KeyTypeHash,
+						},*/
+			/*			{
+						AttributeName: aws.String("IsActive"),
+						KeyType:       types.KeyTypeRange,
+					},*/
 		},
 		TableName:   aws.String(tableName),
 		BillingMode: types.BillingModePayPerRequest,
 	}
+}
+
+func AddItem(ctx context.Context, subscriber models.Subscriber, client *dynamodb.Client, table string) {
+
+	/*	av, err := dynamodbattribute.MarshalMap(subscriber)
+		if err != nil {
+			log.Fatalf("Got error marshalling new movie item: %s", err)
+		}*/
+	svc := client
+	tableName := table
+
+	subscriberMap := map[string]types.AttributeValue{
+		//"SubId":          &types.AttributeValueMemberN{Value: subscriber.SubId},
+		"Email": &types.AttributeValueMemberS{Value: subscriber.Email},
+		/*		"ActivateURL":    &types.AttributeValueMemberS{Value: subscriber.ActivateURL},
+				"UnSubscribeURL": &types.AttributeValueMemberS{Value: subscriber.UnSubscribeURL},*/
+		/*		"IsActive":       &types.AttributeValueMemberBOOL{Value: subscriber.IsActive},*/
+	}
+
+	input := &dynamodb.PutItemInput{
+		Item:      subscriberMap,
+		TableName: aws.String(tableName),
+	}
+
+	_, err := svc.PutItem(ctx, input)
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
+	fmt.Println("Added" + subscriber.Email + "to table" + table)
+
 }
