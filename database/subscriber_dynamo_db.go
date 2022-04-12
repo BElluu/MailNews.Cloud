@@ -128,12 +128,13 @@ func UpdateItem(ctx context.Context, uuid string, email string, client *dynamodb
 		"Email": &types.AttributeValueMemberS{Value: email},
 	}
 	activation := map[string]types.AttributeValue{
-		"IsActive": &types.AttributeValueMemberBOOL{Value: true},
+		":IsActive": &types.AttributeValueMemberBOOL{Value: true},
 	}
 
 	updateData := &dynamodb.UpdateItemInput{
 		Key:                       key,
 		TableName:                 aws.String(tableName),
+		UpdateExpression:          aws.String("set IsActive = :IsActive"),
 		ExpressionAttributeValues: activation,
 	}
 
