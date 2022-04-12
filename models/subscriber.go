@@ -1,7 +1,7 @@
 package models
 
 type Subscriber struct {
-	//SubId          int    `json:"sub-id"`
+	UUID           string `json:"uuid"`
 	Email          string `json:"email"`
 	ActivateURL    string `json:"activate-url"`
 	UnSubscribeURL string `json:"un-subscribe-url"`
