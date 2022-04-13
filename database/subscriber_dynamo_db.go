@@ -6,97 +6,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
 )
 
-func CreateLocalClient() *dynamodb.Client {
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion("local"),
-		config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(
-			func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-				return aws.Endpoint{URL: "http://127.0.0.1:8000"}, nil
-			})),
-		config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
-			Value: aws.Credentials{AccessKeyID: "dummy", SecretAccessKey: "dummy", SessionToken: "dummy",
-				Source: "HardTesty",
-			},
-		}),
-	)
-	if err != nil {
-		panic(err)
-	}
-	return dynamodb.NewFromConfig(cfg)
-}
+const SubscriberTable = "Subscribers"
 
-func ListTables(d *dynamodb.Client) {
-	tables, err := d.ListTables(context.TODO(), &dynamodb.ListTablesInput{})
-	if err != nil {
-		log.Fatal("ListTables failed", err)
-	}
-	for wtf := range tables.TableNames {
-		println(wtf)
-	}
-}
-
-func tableExists(d *dynamodb.Client, name string) bool {
-	tables, err := d.ListTables(context.TODO(), &dynamodb.ListTablesInput{})
-	if err != nil {
-		log.Fatal("ListTables failed", err)
-	}
-	for _, n := range tables.TableNames {
-		if n == name {
-			return true
-		}
-	}
-	return false
-}
-
-func CreateTableIfNotExists(d *dynamodb.Client, tableName string) {
-	if tableExists(d, tableName) {
-		log.Printf("table=%v already exists\n", tableName)
-		return
-	}
-	_, err := d.CreateTable(context.TODO(), buildCreateTableInput(tableName))
-	if err != nil {
-		log.Fatal("CreateTable failed", err)
-	}
-	log.Printf("created table=%v\n", tableName)
-}
-
-func buildCreateTableInput(tableName string) *dynamodb.CreateTableInput {
-	return &dynamodb.CreateTableInput{
-		AttributeDefinitions: []types.AttributeDefinition{
-			{
-				AttributeName: aws.String("UUID"),
-				AttributeType: types.ScalarAttributeTypeS,
-			},
-			{
-				AttributeName: aws.String("Email"),
-				AttributeType: types.ScalarAttributeTypeS,
-			},
-		},
-		KeySchema: []types.KeySchemaElement{
-			{
-				AttributeName: aws.String("UUID"),
-				KeyType:       types.KeyTypeHash,
-			},
-			{
-				AttributeName: aws.String("Email"),
-				KeyType:       types.KeyTypeRange,
-			},
-		},
-		TableName:   aws.String(tableName),
-		BillingMode: types.BillingModePayPerRequest,
-	}
-}
-
-func AddSubscriber(ctx context.Context, subscriber models.Subscriber, client *dynamodb.Client, table string) {
+func AddSubscriber(ctx context.Context, subscriber models.Subscriber, client *dynamodb.Client) {
 	svc := client
-	tableName := table
+	tableName := SubscriberTable
 
 	subscriberMap := map[string]types.AttributeValue{
 		"UUID":           &types.AttributeValueMemberS{Value: subscriber.UUID},
@@ -115,12 +34,12 @@ func AddSubscriber(ctx context.Context, subscriber models.Subscriber, client *dy
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
-	fmt.Println("Added " + subscriber.Email + " to table" + table)
+	fmt.Println("Added " + subscriber.Email + " to table" + tableName)
 }
 
-func DeleteSubscriber(ctx context.Context, uuid string, email string, client *dynamodb.Client, table string) (bool, error) {
+func DeleteSubscriber(ctx context.Context, uuid string, email string, client *dynamodb.Client) (bool, error) {
 	svc := client
-	tableName := table
+	tableName := SubscriberTable
 
 	subscriber := map[string]types.AttributeValue{
 		"UUID":  &types.AttributeValueMemberS{Value: uuid},
@@ -139,12 +58,11 @@ func DeleteSubscriber(ctx context.Context, uuid string, email string, client *dy
 	return true, nil
 }
 
-func ActiveSubscriber(ctx context.Context, uuid string, email string, client *dynamodb.Client, table string) (bool, error) {
+func ActiveSubscriber(ctx context.Context, uuid string, email string, client *dynamodb.Client) (bool, error) {
 	svc := client
-	tableName := table
+	tableName := SubscriberTable
 
-	//
-	key := map[string]types.AttributeValue{
+	subscriber := map[string]types.AttributeValue{
 		"UUID":  &types.AttributeValueMemberS{Value: uuid},
 		"Email": &types.AttributeValueMemberS{Value: email},
 	}
@@ -153,7 +71,7 @@ func ActiveSubscriber(ctx context.Context, uuid string, email string, client *dy
 	}
 
 	updateData := &dynamodb.UpdateItemInput{
-		Key:                       key,
+		Key:                       subscriber,
 		TableName:                 aws.String(tableName),
 		UpdateExpression:          aws.String("set IsActive = :IsActive"),
 		ExpressionAttributeValues: activation,
@@ -164,5 +82,28 @@ func ActiveSubscriber(ctx context.Context, uuid string, email string, client *dy
 		return false, errors.New(err.Error())
 	}
 	return true, nil
+}
 
+func GetSubscriber(ctx context.Context, uuid string, email string, client *dynamodb.Client) (*dynamodb.GetItemOutput, error) {
+	svc := client
+	tableName := SubscriberTable
+
+	subscriber := map[string]types.AttributeValue{
+		"UUID":  &types.AttributeValueMemberS{Value: uuid},
+		"Email": &types.AttributeValueMemberS{Value: email},
+	}
+
+	getSubscriber := &dynamodb.GetItemInput{
+		Key:       subscriber,
+		TableName: aws.String(tableName),
+	}
+
+	subscriberResult, err := svc.GetItem(ctx, getSubscriber)
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+	if subscriberResult.Item == nil {
+		return nil, nil
+	}
+	return subscriberResult, nil
 }

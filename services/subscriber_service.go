@@ -21,21 +21,39 @@ func Subscribe(email string) (bool, error) {
 
 func UnSubscribe(uuid string, email string) (bool, error) {
 	client := database.CreateLocalClient()
-	_, err := database.DeleteSubscriber(context.TODO(), uuid, email, client, "Suby")
-	if err != nil {
-		return false, errors.New(err.Error())
+	if exist, _ := isSubscriberExist(uuid, email); exist {
+		_, err := database.DeleteSubscriber(context.TODO(), uuid, email, client)
+		if err != nil {
+			return false, errors.New(err.Error())
+		}
+		return true, nil
 	}
-	return true, nil
+	return false, errors.New("email does not exist")
 }
 
 func ActivateSubscription(uuid string, email string) (bool, error) {
 	client := database.CreateLocalClient()
-	_, err := database.ActiveSubscriber(context.TODO(), uuid, email, client, "Suby")
+	if exist, _ := isSubscriberExist(uuid, email); exist {
+		_, err := database.ActiveSubscriber(context.TODO(), uuid, email, client)
+		if err != nil {
+			return false, errors.New(err.Error())
+		}
+		return true, nil
+	}
+	return false, errors.New("email does not exist")
+
+}
+
+func isSubscriberExist(uuid string, email string) (bool, error) {
+	client := database.CreateLocalClient()
+	subscriber, err := database.GetSubscriber(context.TODO(), uuid, email, client)
 	if err != nil {
 		return false, errors.New(err.Error())
 	}
+	if subscriber == nil {
+		return false, nil
+	}
 	return true, nil
-
 }
 
 func newSubscriber(email string, client *dynamodb.Client) {
@@ -47,5 +65,5 @@ func newSubscriber(email string, client *dynamodb.Client) {
 		UnSubscribeURL: "http://localhost:8080/unsubscribe/?email=" + email + "&uuid=" + id,
 		IsActive:       false,
 	}
-	database.AddSubscriber(context.TODO(), subscriber, client, "Suby")
+	database.AddSubscriber(context.TODO(), subscriber, client)
 }
