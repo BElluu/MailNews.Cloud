@@ -94,7 +94,7 @@ func buildCreateTableInput(tableName string) *dynamodb.CreateTableInput {
 	}
 }
 
-func AddItem(ctx context.Context, subscriber models.Subscriber, client *dynamodb.Client, table string) {
+func AddSubscriber(ctx context.Context, subscriber models.Subscriber, client *dynamodb.Client, table string) {
 	svc := client
 	tableName := table
 
@@ -118,7 +118,28 @@ func AddItem(ctx context.Context, subscriber models.Subscriber, client *dynamodb
 	fmt.Println("Added " + subscriber.Email + " to table" + table)
 }
 
-func UpdateItem(ctx context.Context, uuid string, email string, client *dynamodb.Client, table string) (bool, error) {
+func DeleteSubscriber(ctx context.Context, uuid string, email string, client *dynamodb.Client, table string) (bool, error) {
+	svc := client
+	tableName := table
+
+	subscriber := map[string]types.AttributeValue{
+		"UUID":  &types.AttributeValueMemberS{Value: uuid},
+		"Email": &types.AttributeValueMemberS{Value: email},
+	}
+
+	input := &dynamodb.DeleteItemInput{
+		Key:       subscriber,
+		TableName: aws.String(tableName),
+	}
+
+	_, err := svc.DeleteItem(ctx, input)
+	if err != nil {
+		return false, errors.New(err.Error())
+	}
+	return true, nil
+}
+
+func ActiveSubscriber(ctx context.Context, uuid string, email string, client *dynamodb.Client, table string) (bool, error) {
 	svc := client
 	tableName := table
 
@@ -140,7 +161,6 @@ func UpdateItem(ctx context.Context, uuid string, email string, client *dynamodb
 
 	_, err := svc.UpdateItem(ctx, updateData)
 	if err != nil {
-		//log.Fatalf("Error updating! %s", err)
 		return false, errors.New(err.Error())
 	}
 	return true, nil
