@@ -6,4 +6,5 @@ type Subscriber struct {
 	ActivateURL    string `json:"activate-url"`
 	UnSubscribeURL string `json:"un-subscribe-url"`
 	IsActive       bool   `json:"is-active"`
+	CreatedDate    string `json:"created-date"`
 }

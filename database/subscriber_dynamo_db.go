@@ -23,6 +23,7 @@ func AddSubscriber(ctx context.Context, subscriber models.Subscriber, client *dy
 		"ActivateURL":    &types.AttributeValueMemberS{Value: subscriber.ActivateURL},
 		"UnSubscribeURL": &types.AttributeValueMemberS{Value: subscriber.UnSubscribeURL},
 		"IsActive":       &types.AttributeValueMemberBOOL{Value: subscriber.IsActive},
+		"CreatedDate":    &types.AttributeValueMemberS{Value: subscriber.CreatedDate},
 	}
 
 	input := &dynamodb.PutItemInput{
