@@ -1,16 +1,17 @@
 package main
 
 import (
+	"MailNews.Subscriber/database"
 	"MailNews.Subscriber/routes"
-	"MailNews.Subscriber/rss"
+	"MailNews.Subscriber/services"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 
-	/*	client := database.CreateLocalClient()
-		database.CreateTableSubscribersIfNotExists(client)*/
-	rss.AmazonRSSParser()
+	client := database.CreateLocalClient()
+	database.PrepareDatabaseTables(client)
+	services.FetchFeeds()
 
 	ginHost := gin.Default()
 	routes.SubscriberRoute(ginHost)

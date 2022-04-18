@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const SubscriberTable = "Subscribers"
+const SubscriberTable = "MailNewsSubscribers"
 
 func AddSubscriber(ctx context.Context, subscriber models.Subscriber, client *dynamodb.Client) {
 	svc := client
