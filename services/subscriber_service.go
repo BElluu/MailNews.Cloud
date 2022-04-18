@@ -8,6 +8,7 @@ import (
 	"errors"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/google/uuid"
+	"time"
 )
 
 func Subscribe(email string) (bool, error) {
@@ -64,6 +65,7 @@ func newSubscriber(email string, client *dynamodb.Client) {
 		ActivateURL:    "http://localhost:8080/activate/?email=" + email + "&uuid=" + id,
 		UnSubscribeURL: "http://localhost:8080/unsubscribe/?email=" + email + "&uuid=" + id,
 		IsActive:       false,
+		CreatedDate:    time.Now().UTC().Format("02-01-2006 15:01:05"),
 	}
 	database.AddSubscriber(context.TODO(), subscriber, client)
 }

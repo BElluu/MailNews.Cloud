@@ -8,10 +8,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"log"
+	"time"
 )
 
-const SubscriberTable = "Subscribers"
+const SubscriberTable = "MailNewsSubscribers"
 
 func AddSubscriber(ctx context.Context, subscriber models.Subscriber, client *dynamodb.Client) {
 	svc := client
@@ -23,6 +25,7 @@ func AddSubscriber(ctx context.Context, subscriber models.Subscriber, client *dy
 		"ActivateURL":    &types.AttributeValueMemberS{Value: subscriber.ActivateURL},
 		"UnSubscribeURL": &types.AttributeValueMemberS{Value: subscriber.UnSubscribeURL},
 		"IsActive":       &types.AttributeValueMemberBOOL{Value: subscriber.IsActive},
+		"CreatedDate":    &types.AttributeValueMemberS{Value: subscriber.CreatedDate},
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -106,4 +109,44 @@ func GetSubscriber(ctx context.Context, uuid string, email string, client *dynam
 		return nil, nil
 	}
 	return subscriberResult, nil
+}
+
+func GetNotActiveSubscribers(ctx context.Context, client *dynamodb.Client) {
+	svc := client
+	tableName := SubscriberTable
+
+	filter := expression.Name("CreatedDate").LessThan(expression.Value(time.Now().UTC()))
+	expr, err := expression.NewBuilder().WithFilter(filter).Build()
+	if err != nil {
+		panic(err)
+	}
+
+	names := make(map[string]string, len(expr.Names()))
+	for k, v := range expr.Names() {
+		if v == nil {
+			println(k)
+			continue
+		}
+		names[k] = *v
+	}
+
+	out, err := svc.Scan(context.Background(), &dynamodb.ScanInput{
+		TableName:                aws.String(tableName),
+		FilterExpression:         expr.Filter(),
+		ExpressionAttributeNames: names,
+		//ExpressionAttributeValues: expr.Values(),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	for _, err := range out.Items {
+		item := models.Subscriber{}
+		if err != nil {
+			println("wtf")
+		}
+		fmt.Println("Title: ", item.Email)
+		fmt.Println("Rating:", item.IsActive)
+		fmt.Println()
+	}
 }
