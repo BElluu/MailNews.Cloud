@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
+	"time"
 )
 
 func CreateLocalClient() *dynamodb.Client {
@@ -35,40 +36,42 @@ func PrepareDatabaseTables(client *dynamodb.Client) {
 	createTableConfigIfNotExists(client)
 }
 
-func createTableSubscribersIfNotExists(d *dynamodb.Client) {
-	if tableExists(d, SubscriberTable) {
+func createTableSubscribersIfNotExists(client *dynamodb.Client) {
+	if tableExists(client, SubscriberTable) {
 		log.Printf("table=%v already exists\n", SubscriberTable)
 		return
 	}
-	_, err := d.CreateTable(context.Background(), buildCreateTableInputSubscribers())
+	_, err := client.CreateTable(context.Background(), buildCreateTableInputSubscribers())
 	if err != nil {
 		log.Fatal("CreateTable failed", err)
 	}
 	log.Printf("created table=%v\n", SubscriberTable)
 }
 
-func createTableFeedsIfNotExists(d *dynamodb.Client) {
-	if tableExists(d, FeedTable) {
+func createTableFeedsIfNotExists(client *dynamodb.Client) {
+	if tableExists(client, FeedTable) {
 		log.Printf("table=%v already exists\n", FeedTable)
 		return
 	}
-	_, err := d.CreateTable(context.Background(), buildCreateTableInputFeeds())
+	_, err := client.CreateTable(context.Background(), buildCreateTableInputFeeds())
 	if err != nil {
 		log.Fatal("CreateTable failed", err)
 	}
 	log.Printf("created table=%v\n", FeedTable)
 }
 
-func createTableConfigIfNotExists(d *dynamodb.Client) {
-	if tableExists(d, "MailNewsConfig") {
+func createTableConfigIfNotExists(client *dynamodb.Client) {
+	if tableExists(client, "MailNewsConfig") {
 		log.Printf("table=%v already exists\n", "MailNewsConfig")
 		return
 	}
-	_, err := d.CreateTable(context.Background(), buildCreateTableInputConfiguration())
+	_, err := client.CreateTable(context.Background(), buildCreateTableInputConfiguration())
 	if err != nil {
 		log.Fatal("CreateTable failed", err)
 	}
 	log.Printf("created table=%v\n", "MailNewsConfig")
+
+	fillConfigTable(context.Background(), client)
 }
 
 func ListTables(d *dynamodb.Client) {
@@ -157,4 +160,35 @@ func tableExists(d *dynamodb.Client, name string) bool {
 		}
 	}
 	return false
+}
+func fillConfigTable(ctx context.Context, client *dynamodb.Client) {
+	svc := client
+	tableName := "MailNewsConfig"
+
+	configMap := map[string]types.AttributeValue{
+		"Name":  &types.AttributeValueMemberS{Value: "LastFetchFeedsDate"},
+		"Value": &types.AttributeValueMemberS{Value: time.Now().Format("02-01-2006 15:01:05")},
+	}
+	configMap2 := map[string]types.AttributeValue{
+		"Name":  &types.AttributeValueMemberS{Value: "LastSendMailDate"},
+		"Value": &types.AttributeValueMemberS{Value: time.Now().Format("02-01-2006 15:01:05")},
+	}
+
+	input := &dynamodb.PutItemInput{
+		Item:      configMap,
+		TableName: aws.String(tableName),
+	}
+
+	_, err := svc.PutItem(ctx, input)
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
+	input2 := &dynamodb.PutItemInput{
+		Item:      configMap2,
+		TableName: aws.String(tableName),
+	}
+	_, err = svc.PutItem(ctx, input2)
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
 }

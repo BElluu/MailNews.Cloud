@@ -35,7 +35,7 @@ func UnSubscribe(uuid string, email string) (bool, error) {
 func ActivateSubscription(uuid string, email string) (bool, error) {
 	client := database.CreateLocalClient()
 	if exist, _ := isSubscriberExist(uuid, email); exist {
-		_, err := database.ActiveSubscriber(context.TODO(), uuid, email, client)
+		_, err := database.ActiveSubscriber(context.Background(), uuid, email, client)
 		if err != nil {
 			return false, errors.New(err.Error())
 		}
@@ -47,7 +47,7 @@ func ActivateSubscription(uuid string, email string) (bool, error) {
 
 func isSubscriberExist(uuid string, email string) (bool, error) {
 	client := database.CreateLocalClient()
-	subscriber, err := database.GetSubscriber(context.TODO(), uuid, email, client)
+	subscriber, err := database.GetSubscriber(context.Background(), uuid, email, client)
 	if err != nil {
 		return false, errors.New(err.Error())
 	}

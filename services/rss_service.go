@@ -4,6 +4,7 @@ import (
 	"MailNews.Subscriber/database"
 	"MailNews.Subscriber/models"
 	"context"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/mmcdole/gofeed"
 	"time"
 )
@@ -17,6 +18,9 @@ func FetchFeeds() {
 func rssParser(feedUrl, provider string) {
 	client := database.CreateLocalClient()
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	getLastFetchDate, _ := database.GetConfigValue(ctx, "LastFetchFeedsDate", client)
+	lastFetchDate := attributevalue.Unmarshal(getLastFetchDate["Value"], &models.Config{})
+	println(lastFetchDate)
 	defer cancel()
 	fp := gofeed.NewParser()
 	feed, _ := fp.ParseURLWithContext(feedUrl, ctx)
@@ -27,7 +31,7 @@ func rssParser(feedUrl, provider string) {
 			PublishDate: item.PublishedParsed,
 			Source:      provider,
 		}
-		if FeedItem.PublishDate.Before(time.Now()) { // before last rss check
+		if FeedItem.PublishDate.After(time.Now()) { // before last rss check
 			database.AddFeed(ctx, FeedItem, client)
 		}
 	}

@@ -3,7 +3,7 @@ package database
 import (
 	"MailNews.Subscriber/models"
 	"context"
-	"fmt"
+	"errors"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -34,5 +34,27 @@ func AddFeed(ctx context.Context, feedItem models.FeedItem, client *dynamodb.Cli
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
-	fmt.Println("Added " + feedItem.Title)
+}
+
+func GetConfigValue(ctx context.Context, configProperty string, client *dynamodb.Client) (map[string]types.AttributeValue, error) {
+	svc := client
+	tableName := "MailNewsConfig"
+
+	configProp := map[string]types.AttributeValue{
+		"Name": &types.AttributeValueMemberS{Value: configProperty},
+	}
+
+	getPropertyValue := &dynamodb.GetItemInput{
+		Key:       configProp,
+		TableName: aws.String(tableName),
+	}
+
+	configResult, err := svc.GetItem(ctx, getPropertyValue)
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+	if configResult.Item == nil {
+		return nil, nil
+	}
+	return configResult.Item, nil
 }

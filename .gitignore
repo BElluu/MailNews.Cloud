@@ -104,6 +104,7 @@ fabric.properties
 
 # Ignores the whole .idea folder and all .iml files
 .idea/
+/.idea
 
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
