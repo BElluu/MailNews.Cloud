@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
-	"time"
+	"strconv"
 )
 
 const SubscriberTable = "MailNewsSubscribers"
@@ -111,11 +111,10 @@ func GetSubscriber(ctx context.Context, uuid string, email string, client *dynam
 	return subscriberResult, nil
 }
 
-func GetNotActiveSubscribers(ctx context.Context, client *dynamodb.Client) {
+func GetSubscribers(ctx context.Context, activeSubscribers bool, client *dynamodb.Client) {
 	svc := client
 	tableName := SubscriberTable
-
-	filter := expression.Name("CreatedDate").LessThan(expression.Value(time.Now().UTC()))
+	filter := expression.Name("isActive").Equal(expression.Value(strconv.FormatBool(activeSubscribers)))
 	expr, err := expression.NewBuilder().WithFilter(filter).Build()
 	if err != nil {
 		panic(err)
