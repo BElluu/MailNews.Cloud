@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/aws/aws-sdk-go/service/dynamodb/expression"
 	"log"
 	"time"
 )
@@ -121,20 +121,11 @@ func GetNotActiveSubscribers(ctx context.Context, client *dynamodb.Client) {
 		panic(err)
 	}
 
-	names := make(map[string]string, len(expr.Names()))
-	for k, v := range expr.Names() {
-		if v == nil {
-			println(k)
-			continue
-		}
-		names[k] = *v
-	}
-
 	out, err := svc.Scan(context.Background(), &dynamodb.ScanInput{
-		TableName:                aws.String(tableName),
-		FilterExpression:         expr.Filter(),
-		ExpressionAttributeNames: names,
-		//ExpressionAttributeValues: expr.Values(),
+		TableName:                 aws.String(tableName),
+		FilterExpression:          expr.Filter(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
 	})
 	if err != nil {
 		panic(err)
