@@ -3,7 +3,6 @@ package database
 import (
 	"MailNews.Subscriber/models"
 	"context"
-	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -34,5 +33,4 @@ func AddFeed(ctx context.Context, feedItem models.FeedItem, client *dynamodb.Cli
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
-	fmt.Println("Added " + feedItem.Title)
 }

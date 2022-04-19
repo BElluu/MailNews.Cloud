@@ -16,7 +16,9 @@ func FetchFeeds() {
 
 func rssParser(feedUrl, provider string) {
 	client := database.CreateLocalClient()
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	getLastFetchDate, _ := database.GetConfigValue(ctx, "LastFetchFeedsDate", client)
+	lastFetchDateParsed, _ := time.Parse("02-01-2006 15:01:05", getLastFetchDate.Value)
 	defer cancel()
 	fp := gofeed.NewParser()
 	feed, _ := fp.ParseURLWithContext(feedUrl, ctx)
@@ -27,7 +29,7 @@ func rssParser(feedUrl, provider string) {
 			PublishDate: item.PublishedParsed,
 			Source:      provider,
 		}
-		if FeedItem.PublishDate.Before(time.Now()) { // before last rss check
+		if FeedItem.PublishDate.After(lastFetchDateParsed) {
 			database.AddFeed(ctx, FeedItem, client)
 		}
 	}
