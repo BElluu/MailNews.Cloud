@@ -6,11 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
-	"strconv"
 )
 
 const SubscriberTable = "MailNewsSubscribers"
@@ -111,17 +111,19 @@ func GetSubscriber(ctx context.Context, uuid string, email string, client *dynam
 	return subscriberResult, nil
 }
 
-func GetSubscribers(ctx context.Context, activeSubscribers bool, client *dynamodb.Client) {
+func GetSubscribers(activeSubscribers bool, client *dynamodb.Client) []string {
 	svc := client
 	tableName := SubscriberTable
-	filter := expression.Name("isActive").Equal(expression.Value(strconv.FormatBool(activeSubscribers)))
-	expr, err := expression.NewBuilder().WithFilter(filter).Build()
+	filter := expression.Name("IsActive").Equal(expression.Value(activeSubscribers))
+	proj := expression.NamesList(expression.Name("Email"))
+	expr, err := expression.NewBuilder().WithFilter(filter).WithProjection(proj).Build()
 	if err != nil {
 		panic(err)
 	}
 
 	out, err := svc.Scan(context.Background(), &dynamodb.ScanInput{
 		TableName:                 aws.String(tableName),
+		ProjectionExpression:      expr.Projection(),
 		FilterExpression:          expr.Filter(),
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
@@ -130,13 +132,19 @@ func GetSubscribers(ctx context.Context, activeSubscribers bool, client *dynamod
 		panic(err)
 	}
 
-	for _, err := range out.Items {
+	var subscribers []string
+
+	for _, value := range out.Items {
 		item := models.Subscriber{}
+		err = attributevalue.UnmarshalMap(value, &item)
 		if err != nil {
 			println("wtf")
 		}
-		fmt.Println("Title: ", item.Email)
-		fmt.Println("Rating:", item.IsActive)
-		fmt.Println()
+		subscribers = append(subscribers, item.Email)
 	}
+
+	if len(subscribers) == 0 {
+		return nil
+	}
+	return subscribers
 }
