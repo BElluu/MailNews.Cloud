@@ -111,11 +111,13 @@ func GetSubscriber(ctx context.Context, uuid string, email string, client *dynam
 	return subscriberResult, nil
 }
 
-func GetSubscribers(activeSubscribers bool, client *dynamodb.Client) []string {
+func GetSubscribers(activeSubscribers bool, client *dynamodb.Client) []models.Subscriber {
 	svc := client
 	tableName := SubscriberTable
 	filter := expression.Name("IsActive").Equal(expression.Value(activeSubscribers))
-	proj := expression.NamesList(expression.Name("Email"))
+	proj := expression.NamesList(expression.Name("Email"),
+		expression.Name("ActivateURL"),
+		expression.Name("UnSubscribeURL"))
 	expr, err := expression.NewBuilder().WithFilter(filter).WithProjection(proj).Build()
 	if err != nil {
 		panic(err)
@@ -132,7 +134,7 @@ func GetSubscribers(activeSubscribers bool, client *dynamodb.Client) []string {
 		panic(err)
 	}
 
-	var subscribers []string
+	var subscribers []models.Subscriber
 
 	for _, value := range out.Items {
 		item := models.Subscriber{}
@@ -140,11 +142,44 @@ func GetSubscribers(activeSubscribers bool, client *dynamodb.Client) []string {
 		if err != nil {
 			println("wtf")
 		}
-		subscribers = append(subscribers, item.Email)
+		subscribers = append(subscribers, item)
 	}
 
 	if len(subscribers) == 0 {
 		return nil
 	}
 	return subscribers
+}
+
+func GetSubscriber2(email string, client *dynamodb.Client) models.Subscriber {
+	svc := client
+	tableName := SubscriberTable
+	filter := expression.Name("Email").Equal(expression.Value(email))
+	proj := expression.NamesList(expression.Name("Email"),
+		expression.Name("ActivateURL"),
+		expression.Name("UnSubscribeURL"))
+	expr, err := expression.NewBuilder().WithFilter(filter).WithProjection(proj).Build()
+	if err != nil {
+		panic(err)
+	}
+
+	out, err := svc.Scan(context.Background(), &dynamodb.ScanInput{
+		TableName:                 aws.String(tableName),
+		ProjectionExpression:      expr.Projection(),
+		FilterExpression:          expr.Filter(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	var subscriber models.Subscriber
+	for _, value := range out.Items {
+		err = attributevalue.UnmarshalMap(value, &subscriber)
+		if err != nil {
+			println("wtf")
+		}
+	}
+	return subscriber
 }

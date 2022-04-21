@@ -37,8 +37,9 @@ func SubscriberRoute(router *gin.Engine) {
 			})
 			return
 		}
+		services.SendActivateEmail(email)
 		c.JSON(http.StatusOK, gin.H{
-			"Status": "Awesome. We added " + email + " to our database. W8 for best newsletter ever!",
+			"Status": "Awesome. Activate your email :)",
 		})
 	})
 

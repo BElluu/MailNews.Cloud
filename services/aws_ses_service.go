@@ -2,27 +2,30 @@ package services
 
 import (
 	"MailNews.Subscriber/common"
-	"MailNews.Subscriber/models"
+	"MailNews.Subscriber/database"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ses"
 	"log"
 )
 
-func SendEmailSES(messageBody string, subject string, fromEmail string, recipient models.Recipient) {
+func SendActivateEmail(toEmail string) {
+	client := common.DynamoDBSession()
+	subscriber := database.GetSubscriber2(toEmail, client)
+
+	body := "There is your activate link:" + subscriber.ActivateURL
+	var recip = []*string{&subscriber.Email}
+	SendEmailSES(body, "MailNews.Cloud - Activate newsletter.", "xxx", recip)
+}
+
+func SendEmailSES(messageBody string, subject string, fromEmail string, recipient []*string) {
 
 	session := common.AmazonSESSesion()
-	var recipients []*string
-
-	for _, r := range recipient.ToEmails { // in result from dynamo
-		recipient := r
-		recipients = append(recipients, &recipient)
-	}
 
 	svc := ses.New(session)
 
 	input := &ses.SendEmailInput{
 		Destination: &ses.Destination{
-			ToAddresses: recipients,
+			ToAddresses: recipient,
 		},
 		Message: &ses.Message{
 			Body: &ses.Body{
@@ -43,5 +46,5 @@ func SendEmailSES(messageBody string, subject string, fromEmail string, recipien
 		log.Println("Error sending mail - ", err)
 		return
 	}
-	log.Println("Email sent successfully to: ", recipient.ToEmails)
+	log.Println("Email sent successfully.")
 }
