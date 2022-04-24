@@ -1,6 +1,7 @@
 package main
 
 import (
+	"MailNews.Subscriber/common"
 	"MailNews.Subscriber/database"
 	"MailNews.Subscriber/routes"
 	"MailNews.Subscriber/services"
@@ -9,7 +10,7 @@ import (
 
 func main() {
 
-	client := database.CreateLocalClient()
+	client := common.CreateLocalClient()
 	database.PrepareDatabaseTables(client)
 	services.FetchFeeds()
 	ginHost := gin.Default()

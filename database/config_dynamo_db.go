@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-func GetConfigValue(ctx context.Context, configProperty string, client *dynamodb.Client) (*models.Config, error) {
+func GetConfigValue(configProperty string, client *dynamodb.Client) (*models.Config, error) {
 	svc := client
 	tableName := "MailNewsConfig"
 
@@ -23,14 +23,11 @@ func GetConfigValue(ctx context.Context, configProperty string, client *dynamodb
 		TableName: aws.String(tableName),
 	}
 
-	configResult, err := svc.GetItem(ctx, getPropertyValue)
+	configResult, err := svc.GetItem(context.Background(), getPropertyValue)
 	if err != nil {
 		return nil, errors.New(err.Error())
 	}
 	config := models.Config{}
 	err = attributevalue.UnmarshalMap(configResult.Item, &config)
-	/*	if configResult.Item == nil {
-		return nil, nil
-	}*/
 	return &config, nil
 }

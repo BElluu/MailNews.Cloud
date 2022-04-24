@@ -1,10 +1,10 @@
 package services
 
 import (
+	"MailNews.Subscriber/common"
 	"MailNews.Subscriber/common/validator"
 	"MailNews.Subscriber/database"
 	"MailNews.Subscriber/models"
-	"context"
 	"errors"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/google/uuid"
@@ -13,7 +13,7 @@ import (
 
 func Subscribe(email string) (bool, error) {
 	if Email.IsValid(email) {
-		client := database.CreateLocalClient()
+		client := common.CreateLocalClient()
 		newSubscriber(email, client)
 		return true, nil
 	}
@@ -21,9 +21,9 @@ func Subscribe(email string) (bool, error) {
 }
 
 func UnSubscribe(uuid string, email string) (bool, error) {
-	client := database.CreateLocalClient()
+	client := common.CreateLocalClient()
 	if exist, _ := isSubscriberExist(uuid, email); exist {
-		_, err := database.DeleteSubscriber(context.TODO(), uuid, email, client)
+		_, err := database.DeleteSubscriber(uuid, email, client)
 		if err != nil {
 			return false, errors.New(err.Error())
 		}
@@ -33,9 +33,9 @@ func UnSubscribe(uuid string, email string) (bool, error) {
 }
 
 func ActivateSubscription(uuid string, email string) (bool, error) {
-	client := database.CreateLocalClient()
+	client := common.CreateLocalClient()
 	if exist, _ := isSubscriberExist(uuid, email); exist {
-		_, err := database.ActiveSubscriber(context.Background(), uuid, email, client)
+		_, err := database.ActiveSubscriber(uuid, email, client)
 		if err != nil {
 			return false, errors.New(err.Error())
 		}
@@ -46,8 +46,8 @@ func ActivateSubscription(uuid string, email string) (bool, error) {
 }
 
 func isSubscriberExist(uuid string, email string) (bool, error) {
-	client := database.CreateLocalClient()
-	subscriber, err := database.GetSubscriber(context.Background(), uuid, email, client)
+	client := common.CreateLocalClient()
+	subscriber, err := database.GetSubscriber(uuid, email, client)
 	if err != nil {
 		return false, errors.New(err.Error())
 	}
@@ -67,5 +67,5 @@ func newSubscriber(email string, client *dynamodb.Client) {
 		IsActive:       false,
 		CreatedDate:    time.Now().UTC().Format("02-01-2006 15:01:05"),
 	}
-	database.AddSubscriber(context.TODO(), subscriber, client)
+	database.AddSubscriber(subscriber, client)
 }

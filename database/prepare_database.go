@@ -3,32 +3,11 @@ package database
 import (
 	"context"
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"log"
 	"time"
 )
-
-func CreateLocalClient() *dynamodb.Client {
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
-		config.WithRegion("local"),
-		config.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(
-			func(service, region string, options ...interface{}) (aws.Endpoint, error) {
-				return aws.Endpoint{URL: "http://127.0.0.1:8000"}, nil
-			})),
-		config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
-			Value: aws.Credentials{AccessKeyID: "dummy", SecretAccessKey: "dummy", SessionToken: "dummy",
-				Source: "HardTesty",
-			},
-		}),
-	)
-	if err != nil {
-		panic(err)
-	}
-	return dynamodb.NewFromConfig(cfg)
-}
 
 func PrepareDatabaseTables(client *dynamodb.Client) {
 	createTableSubscribersIfNotExists(client)
@@ -71,7 +50,7 @@ func createTableConfigIfNotExists(client *dynamodb.Client) {
 	}
 	log.Printf("created table=%v\n", "MailNewsConfig")
 
-	fillConfigTable(context.Background(), client)
+	fillConfigTable(client)
 }
 
 func ListTables(d *dynamodb.Client) {
@@ -161,7 +140,7 @@ func tableExists(d *dynamodb.Client, name string) bool {
 	}
 	return false
 }
-func fillConfigTable(ctx context.Context, client *dynamodb.Client) {
+func fillConfigTable(client *dynamodb.Client) {
 	svc := client
 	tableName := "MailNewsConfig"
 
@@ -179,7 +158,7 @@ func fillConfigTable(ctx context.Context, client *dynamodb.Client) {
 		TableName: aws.String(tableName),
 	}
 
-	_, err := svc.PutItem(ctx, input)
+	_, err := svc.PutItem(context.Background(), input)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
@@ -187,7 +166,7 @@ func fillConfigTable(ctx context.Context, client *dynamodb.Client) {
 		Item:      configMap2,
 		TableName: aws.String(tableName),
 	}
-	_, err = svc.PutItem(ctx, input2)
+	_, err = svc.PutItem(context.Background(), input2)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}

@@ -15,7 +15,7 @@ import (
 
 const SubscriberTable = "MailNewsSubscribers"
 
-func AddSubscriber(ctx context.Context, subscriber models.Subscriber, client *dynamodb.Client) {
+func AddSubscriber(subscriber models.Subscriber, client *dynamodb.Client) {
 	svc := client
 	tableName := SubscriberTable
 
@@ -33,14 +33,14 @@ func AddSubscriber(ctx context.Context, subscriber models.Subscriber, client *dy
 		TableName: aws.String(tableName),
 	}
 
-	_, err := svc.PutItem(ctx, input)
+	_, err := svc.PutItem(context.Background(), input)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
 	fmt.Println("Added " + subscriber.Email + " to table" + tableName)
 }
 
-func DeleteSubscriber(ctx context.Context, uuid string, email string, client *dynamodb.Client) (bool, error) {
+func DeleteSubscriber(uuid string, email string, client *dynamodb.Client) (bool, error) {
 	svc := client
 	tableName := SubscriberTable
 
@@ -54,14 +54,14 @@ func DeleteSubscriber(ctx context.Context, uuid string, email string, client *dy
 		TableName: aws.String(tableName),
 	}
 
-	_, err := svc.DeleteItem(ctx, input)
+	_, err := svc.DeleteItem(context.Background(), input)
 	if err != nil {
 		return false, errors.New(err.Error())
 	}
 	return true, nil
 }
 
-func ActiveSubscriber(ctx context.Context, uuid string, email string, client *dynamodb.Client) (bool, error) {
+func ActiveSubscriber(uuid string, email string, client *dynamodb.Client) (bool, error) {
 	svc := client
 	tableName := SubscriberTable
 
@@ -80,14 +80,14 @@ func ActiveSubscriber(ctx context.Context, uuid string, email string, client *dy
 		ExpressionAttributeValues: activation,
 	}
 
-	_, err := svc.UpdateItem(ctx, updateData)
+	_, err := svc.UpdateItem(context.Background(), updateData)
 	if err != nil {
 		return false, errors.New(err.Error())
 	}
 	return true, nil
 }
 
-func GetSubscriber(ctx context.Context, uuid string, email string, client *dynamodb.Client) (*dynamodb.GetItemOutput, error) {
+func GetSubscriber(uuid string, email string, client *dynamodb.Client) (*dynamodb.GetItemOutput, error) {
 	svc := client
 	tableName := SubscriberTable
 
@@ -101,7 +101,7 @@ func GetSubscriber(ctx context.Context, uuid string, email string, client *dynam
 		TableName: aws.String(tableName),
 	}
 
-	subscriberResult, err := svc.GetItem(ctx, getSubscriber)
+	subscriberResult, err := svc.GetItem(context.Background(), getSubscriber)
 	if err != nil {
 		return nil, errors.New(err.Error())
 	}

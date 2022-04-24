@@ -1,6 +1,7 @@
 package services
 
 import (
+	"MailNews.Subscriber/common"
 	"MailNews.Subscriber/database"
 	"MailNews.Subscriber/models"
 	"context"
@@ -15,9 +16,9 @@ func FetchFeeds() {
 }
 
 func rssParser(feedUrl, provider string) {
-	client := database.CreateLocalClient()
+	client := common.CreateLocalClient()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	getLastFetchDate, _ := database.GetConfigValue(ctx, "LastFetchFeedsDate", client)
+	getLastFetchDate, _ := database.GetConfigValue("LastFetchFeedsDate", client)
 	lastFetchDateParsed, _ := time.Parse("02-01-2006 15:01:05", getLastFetchDate.Value)
 	defer cancel()
 	fp := gofeed.NewParser()
@@ -29,7 +30,7 @@ func rssParser(feedUrl, provider string) {
 			PublishDate: item.PublishedParsed,
 			Source:      provider,
 		}
-		if FeedItem.PublishDate.After(lastFetchDateParsed) {
+		if FeedItem.PublishDate.After(lastFetchDateParsed) { // change for prod to before
 			database.AddFeed(ctx, FeedItem, client)
 		}
 	}
