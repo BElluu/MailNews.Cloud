@@ -4,6 +4,8 @@ import (
 	"MailNews.Subscriber/models"
 	"context"
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/google/uuid"
@@ -12,7 +14,7 @@ import (
 
 const FeedTable = "MailNewsFeeds"
 
-func AddFeed(ctx context.Context, feedItem models.FeedItem, client *dynamodb.Client) {
+func AddFeed(feedItem models.FeedItem, client *dynamodb.Client) {
 	svc := client
 	tableName := FeedTable
 	id := uuid.New().String()
@@ -21,7 +23,8 @@ func AddFeed(ctx context.Context, feedItem models.FeedItem, client *dynamodb.Cli
 		"Title":       &types.AttributeValueMemberS{Value: feedItem.Title},
 		"Link":        &types.AttributeValueMemberS{Value: feedItem.Link},
 		"PublishDate": &types.AttributeValueMemberS{Value: feedItem.PublishDate.Format("02-01-2006 15:01:05")},
-		"Source":      &types.AttributeValueMemberS{Value: feedItem.Source},
+		"Provider":    &types.AttributeValueMemberS{Value: feedItem.Provider},
+		"Sent":        &types.AttributeValueMemberBOOL{Value: feedItem.Sent},
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -29,8 +32,70 @@ func AddFeed(ctx context.Context, feedItem models.FeedItem, client *dynamodb.Cli
 		TableName: aws.String(tableName),
 	}
 
-	_, err := svc.PutItem(ctx, input)
+	_, err := svc.PutItem(context.Background(), input)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
+}
+
+func FeedFromProviderExist(provider string, client *dynamodb.Client) bool {
+
+	svc := client
+	tableName := FeedTable
+	filter := expression.Name("Provider").Equal(expression.Value(provider)).And(expression.Name("Sent").Equal(expression.Value(false)))
+	expr, err := expression.NewBuilder().WithFilter(filter).Build()
+	if err != nil {
+		panic(err)
+	}
+
+	out, err := svc.Scan(context.Background(), &dynamodb.ScanInput{
+		TableName:                 aws.String(tableName),
+		FilterExpression:          expr.Filter(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	if len(out.Items) == 0 {
+		return false
+	}
+	return true
+}
+
+func GetFeedsToSend(provider string, client *dynamodb.Client) []models.FeedItem {
+	svc := client
+	tableName := SubscriberTable
+	filter := expression.Name("Provider").Equal(expression.Value(provider)).And(expression.Name("Sent").Equal(expression.Value(false)))
+	proj := expression.NamesList(expression.Name("UUID"), expression.Name("Title"),
+		expression.Name("Description"),
+		expression.Name("Link"))
+	expr, err := expression.NewBuilder().WithFilter(filter).WithProjection(proj).Build()
+	if err != nil {
+		panic(err)
+	}
+
+	out, err := svc.Scan(context.Background(), &dynamodb.ScanInput{
+		TableName:                 aws.String(tableName),
+		ProjectionExpression:      expr.Projection(),
+		FilterExpression:          expr.Filter(),
+		ExpressionAttributeNames:  expr.Names(),
+		ExpressionAttributeValues: expr.Values(),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	var feeds []models.FeedItem
+
+	for _, value := range out.Items {
+		item := models.FeedItem{}
+		err = attributevalue.UnmarshalMap(value, &feeds)
+		if err != nil {
+			println("wtf")
+		}
+		feeds = append(feeds, item)
+	}
+	return feeds
 }

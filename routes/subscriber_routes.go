@@ -16,7 +16,7 @@ func SubscriberRoute(router *gin.Engine) {
 	router.GET("/activate", func(c *gin.Context) {
 		email := c.Query("email")
 		uuid := c.Query("uuid")
-		_, err := services.ActivateSubscription(uuid, email)
+		err := services.ActivateSubscription(uuid, email)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": err.Error(),
@@ -30,22 +30,23 @@ func SubscriberRoute(router *gin.Engine) {
 
 	router.GET("/subscribe", func(c *gin.Context) {
 		email := c.Query("email")
-		_, err := services.Subscribe(email)
+		err := services.Subscribe(email)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": err.Error(),
 			})
 			return
 		}
+		services.SendActivateEmail(email)
 		c.JSON(http.StatusOK, gin.H{
-			"Status": "Awesome. We added " + email + " to our database. W8 for best newsletter ever!",
+			"Status": "Awesome. Activate your email :)",
 		})
 	})
 
 	router.GET("/unsubscribe", func(c *gin.Context) {
 		email := c.Query("email")
 		uuid := c.Query("uuid")
-		_, err := services.UnSubscribe(uuid, email)
+		err := services.UnSubscribe(uuid, email)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{
 				"error": err.Error(),
