@@ -40,7 +40,7 @@ func AddSubscriber(subscriber models.Subscriber, client *dynamodb.Client) {
 	fmt.Println("Added " + subscriber.Email + " to table" + tableName)
 }
 
-func DeleteSubscriber(uuid string, email string, client *dynamodb.Client) (bool, error) {
+func DeleteSubscriber(uuid string, email string, client *dynamodb.Client) error {
 	svc := client
 	tableName := SubscriberTable
 
@@ -56,9 +56,9 @@ func DeleteSubscriber(uuid string, email string, client *dynamodb.Client) (bool,
 
 	_, err := svc.DeleteItem(context.Background(), input)
 	if err != nil {
-		return false, errors.New(err.Error())
+		return errors.New(err.Error())
 	}
-	return true, nil
+	return nil
 }
 
 func ActiveSubscriber(uuid string, email string, client *dynamodb.Client) (bool, error) {
@@ -157,7 +157,8 @@ func GetSubscriber2(email string, client *dynamodb.Client) models.Subscriber {
 	filter := expression.Name("Email").Equal(expression.Value(email))
 	proj := expression.NamesList(expression.Name("Email"),
 		expression.Name("ActivateURL"),
-		expression.Name("UnSubscribeURL"))
+		expression.Name("UnSubscribeURL"),
+		expression.Name("IsActive"))
 	expr, err := expression.NewBuilder().WithFilter(filter).WithProjection(proj).Build()
 	if err != nil {
 		panic(err)

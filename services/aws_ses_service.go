@@ -17,7 +17,7 @@ func SendActivateEmail(toEmail string) {
 	var recip = []*string{&subscriber.Email}
 	err := SendEmailSES(body, "MailNews.Cloud - Activate newsletter.", "xxx", recip)
 	if err != nil {
-		_, err := database.DeleteSubscriber(subscriber.UUID, subscriber.Email, client)
+		err := database.DeleteSubscriber(subscriber.UUID, subscriber.Email, client)
 		if err != nil {
 			return // PANIC - log it!
 		}

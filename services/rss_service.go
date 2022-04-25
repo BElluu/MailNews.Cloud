@@ -28,10 +28,10 @@ func rssParser(feedUrl, provider string) {
 			Title:       item.Title,
 			Link:        item.Link,
 			PublishDate: item.PublishedParsed,
-			Source:      provider,
+			Provider:    provider,
 		}
-		if FeedItem.PublishDate.After(lastFetchDateParsed) { // change for prod to before
-			database.AddFeed(ctx, FeedItem, client)
+		if FeedItem.PublishDate.Before(lastFetchDateParsed) { // change for prod to before
+			database.AddFeed(FeedItem, client)
 		}
 	}
 }

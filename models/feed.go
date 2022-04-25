@@ -7,6 +7,6 @@ type FeedItem struct {
 	Title       string
 	Link        string
 	PublishDate *time.Time
-	Source      string
+	Provider    string
 	Sent        bool
 }
