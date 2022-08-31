@@ -12,6 +12,7 @@ func main() {
 
 	client := common.CreateLocalClient()
 	database.PrepareDatabaseTables(client)
+	database.ListTables(client)
 	services.FetchFeeds()
 	ginHost := gin.Default()
 	routes.SubscriberRoute(ginHost)

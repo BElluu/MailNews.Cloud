@@ -13,8 +13,8 @@ import (
 
 const Region = "eu-central-1"
 const AccessKeyID = "dummy"
-const SecretAccessKey = ""
-const SessionToken = ""
+const SecretAccessKey = "dummy"
+const SessionToken = "dummy"
 
 func CreateLocalClient() *dynamodb.Client {
 	cfg, err := config.LoadDefaultConfig(context.Background(),
@@ -24,7 +24,7 @@ func CreateLocalClient() *dynamodb.Client {
 				return aws2.Endpoint{URL: "http://127.0.0.1:8000"}, nil
 			})),
 		config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
-			Value: aws2.Credentials{AccessKeyID: "dummy", SecretAccessKey: "dummy", SessionToken: "dummy",
+			Value: aws2.Credentials{AccessKeyID: AccessKeyID, SecretAccessKey: SecretAccessKey, SessionToken: SessionToken,
 				Source: "MailNews",
 			},
 		}),

@@ -13,18 +13,30 @@ import (
 )
 
 const FeedTable = "MailNewsFeeds"
+const AWSTable = "AwsNews"
+const AzureTable = "AzureNews"
+const GCPTable = "GoogleCloudNews"
 
-func AddFeed(feedItem models.FeedItem, client *dynamodb.Client) {
+func AddFeed(feedItem models.FeedItem, client *dynamodb.Client, provider string) {
 	svc := client
-	tableName := FeedTable
+	tableName := ""
+	switch provider {
+	case "Aws":
+		tableName = AWSTable
+	case "Azure":
+		tableName = AzureTable
+	case "Google":
+		tableName = GCPTable
+	}
+
 	id := uuid.New().String()
 	feedMap := map[string]types.AttributeValue{
 		"UUID":        &types.AttributeValueMemberS{Value: id},
 		"Title":       &types.AttributeValueMemberS{Value: feedItem.Title},
 		"Link":        &types.AttributeValueMemberS{Value: feedItem.Link},
 		"PublishDate": &types.AttributeValueMemberS{Value: feedItem.PublishDate.Format("02-01-2006 15:01:05")},
-		"Provider":    &types.AttributeValueMemberS{Value: feedItem.Provider},
-		"Sent":        &types.AttributeValueMemberBOOL{Value: feedItem.Sent},
+		//"Provider":    &types.AttributeValueMemberS{Value: feedItem.Provider},
+		"Sent": &types.AttributeValueMemberBOOL{Value: feedItem.Sent},
 	}
 
 	input := &dynamodb.PutItemInput{

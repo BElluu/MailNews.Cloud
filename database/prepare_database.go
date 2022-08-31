@@ -11,7 +11,8 @@ import (
 
 func PrepareDatabaseTables(client *dynamodb.Client) {
 	createTableSubscribersIfNotExists(client)
-	createTableFeedsIfNotExists(client)
+	//createTableFeedsIfNotExists(client) // split to providers
+	createProvidersTablesIfNotExists(client)
 	createTableConfigIfNotExists(client)
 }
 
@@ -37,6 +38,23 @@ func createTableFeedsIfNotExists(client *dynamodb.Client) {
 		log.Fatal("CreateTable failed", err)
 	}
 	log.Printf("created table=%v\n", FeedTable)
+}
+
+func createProvidersTablesIfNotExists(client *dynamodb.Client) {
+	tablesToCreate := prepareProviderTablesDefinition()
+
+	for tableName, table := range tablesToCreate {
+		if tableExists(client, tableName) {
+			log.Printf("table=%v already exists\n", tableName)
+			return
+		}
+
+		_, err := client.CreateTable(context.Background(), &table)
+		if err != nil {
+			log.Fatal("CreateTable failed", err)
+		}
+		log.Printf("created table=%v\n", tableName)
+	}
 }
 
 func createTableConfigIfNotExists(client *dynamodb.Client) {
@@ -107,6 +125,32 @@ func buildCreateTableInputFeeds() *dynamodb.CreateTableInput {
 		TableName:   aws.String(FeedTable),
 		BillingMode: types.BillingModePayPerRequest,
 	}
+}
+
+func prepareProviderTablesDefinition() map[string]dynamodb.CreateTableInput {
+	providers := []string{AWSTable, AzureTable, GCPTable}
+	tables := make(map[string]dynamodb.CreateTableInput)
+
+	for _, provider := range providers {
+		tables[provider] =
+			dynamodb.CreateTableInput{
+				AttributeDefinitions: []types.AttributeDefinition{
+					{
+						AttributeName: aws.String("UUID"),
+						AttributeType: types.ScalarAttributeTypeS,
+					},
+				},
+				KeySchema: []types.KeySchemaElement{
+					{
+						AttributeName: aws.String("UUID"),
+						KeyType:       types.KeyTypeHash,
+					},
+				},
+				TableName:   aws.String(provider),
+				BillingMode: types.BillingModePayPerRequest,
+			}
+	}
+	return tables
 }
 
 func buildCreateTableInputConfiguration() *dynamodb.CreateTableInput {
