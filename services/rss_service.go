@@ -10,7 +10,7 @@ import (
 )
 
 func FetchFeeds() {
-	rssParser("https://aws.amazon.com/blogs/aws/feed/", "Amazon")
+	rssParser("https://aws.amazon.com/blogs/aws/feed/", "Aws")
 	rssParser("https://cloudblog.withgoogle.com/products/gcp/rss/", "Google")
 	rssParser("https://azurecomcdn.azureedge.net/en-us/blog/feed/", "Azure")
 }
@@ -28,10 +28,10 @@ func rssParser(feedUrl, provider string) {
 			Title:       item.Title,
 			Link:        item.Link,
 			PublishDate: item.PublishedParsed,
-			Provider:    provider,
+			//Provider:    provider,
 		}
 		if FeedItem.PublishDate.Before(lastFetchDateParsed) { // change for prod to before
-			database.AddFeed(FeedItem, client)
+			database.AddFeed(FeedItem, client, provider)
 		}
 	}
 }
