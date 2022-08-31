@@ -26,7 +26,7 @@ func SendActivateEmail(toEmail string) {
 
 func SendEmailSES(messageBody string, subject string, fromEmail string, recipient []*string) error {
 
-	session := common.AmazonSESSesion()
+	session := common.AmazonSESSession()
 
 	svc := ses.New(session)
 

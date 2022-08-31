@@ -13,8 +13,6 @@ import (
 	"log"
 )
 
-const SubscriberTable = "MailNewsSubscribers"
-
 func AddSubscriber(subscriber models.Subscriber, client *dynamodb.Client) {
 	svc := client
 	tableName := SubscriberTable

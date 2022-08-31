@@ -12,7 +12,7 @@ import (
 
 func GetConfigValue(configProperty string, client *dynamodb.Client) (*models.Config, error) {
 	svc := client
-	tableName := "MailNewsConfig"
+	tableName := MailNewsConfigTable
 
 	configProp := map[string]types.AttributeValue{
 		"Name": &types.AttributeValueMemberS{Value: configProperty},

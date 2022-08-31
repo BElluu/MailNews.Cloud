@@ -12,11 +12,6 @@ import (
 	"log"
 )
 
-const FeedTable = "MailNewsFeeds"
-const AWSTable = "AwsNews"
-const AzureTable = "AzureNews"
-const GCPTable = "GoogleCloudNews"
-
 func AddFeed(feedItem models.FeedItem, client *dynamodb.Client, provider string) {
 	svc := client
 	tableName := ""
@@ -35,8 +30,7 @@ func AddFeed(feedItem models.FeedItem, client *dynamodb.Client, provider string)
 		"Title":       &types.AttributeValueMemberS{Value: feedItem.Title},
 		"Link":        &types.AttributeValueMemberS{Value: feedItem.Link},
 		"PublishDate": &types.AttributeValueMemberS{Value: feedItem.PublishDate.Format("02-01-2006 15:01:05")},
-		//"Provider":    &types.AttributeValueMemberS{Value: feedItem.Provider},
-		"Sent": &types.AttributeValueMemberBOOL{Value: feedItem.Sent},
+		"Sent":        &types.AttributeValueMemberBOOL{Value: feedItem.Sent},
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -51,7 +45,7 @@ func AddFeed(feedItem models.FeedItem, client *dynamodb.Client, provider string)
 }
 
 func FeedFromProviderExist(provider string, client *dynamodb.Client) bool {
-
+	//TODO I do not remember I need this method. Check it!
 	svc := client
 	tableName := FeedTable
 	filter := expression.Name("Provider").Equal(expression.Value(provider)).And(expression.Name("Sent").Equal(expression.Value(false)))
@@ -76,9 +70,9 @@ func FeedFromProviderExist(provider string, client *dynamodb.Client) bool {
 	return true
 }
 
-func GetFeedsToSend(provider string, client *dynamodb.Client) []models.FeedItem {
+func GetNewsToSend(provider string, client *dynamodb.Client) []models.FeedItem {
 	svc := client
-	tableName := SubscriberTable
+	tableName := AWSTable // TODO check all tables
 	filter := expression.Name("Provider").Equal(expression.Value(provider)).And(expression.Name("Sent").Equal(expression.Value(false)))
 	proj := expression.NamesList(expression.Name("UUID"), expression.Name("Title"),
 		expression.Name("Description"),
@@ -99,15 +93,15 @@ func GetFeedsToSend(provider string, client *dynamodb.Client) []models.FeedItem 
 		panic(err)
 	}
 
-	var feeds []models.FeedItem
+	var news []models.FeedItem
 
 	for _, value := range out.Items {
 		item := models.FeedItem{}
-		err = attributevalue.UnmarshalMap(value, &feeds)
+		err = attributevalue.UnmarshalMap(value, &news)
 		if err != nil {
 			println("wtf")
 		}
-		feeds = append(feeds, item)
+		news = append(news, item)
 	}
-	return feeds
+	return news
 }
