@@ -44,7 +44,7 @@ func DynamoDBSession() *dynamodb.Client {
 	return client
 }
 
-func AmazonSESSesion() *session.Session {
+func AmazonSESSession() *session.Session {
 	sess, err := session.NewSession(&aws1.Config{Region: aws1.String(Region)})
 	if err != nil {
 		log.Println("Error occurred while creating aws session", err)

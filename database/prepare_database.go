@@ -9,9 +9,15 @@ import (
 	"time"
 )
 
+const SubscriberTable = "MailNewsSubscribers"
+const FeedTable = "MailNewsFeeds"
+const AWSTable = "AwsNews"
+const AzureTable = "AzureNews"
+const GCPTable = "GoogleCloudNews"
+const MailNewsConfigTable = "MailNewsConfig"
+
 func PrepareDatabaseTables(client *dynamodb.Client) {
 	createTableSubscribersIfNotExists(client)
-	//createTableFeedsIfNotExists(client) // split to providers
 	createProvidersTablesIfNotExists(client)
 	createTableConfigIfNotExists(client)
 }
@@ -26,18 +32,6 @@ func createTableSubscribersIfNotExists(client *dynamodb.Client) {
 		log.Fatal("CreateTable failed", err)
 	}
 	log.Printf("created table=%v\n", SubscriberTable)
-}
-
-func createTableFeedsIfNotExists(client *dynamodb.Client) {
-	if tableExists(client, FeedTable) {
-		log.Printf("table=%v already exists\n", FeedTable)
-		return
-	}
-	_, err := client.CreateTable(context.Background(), buildCreateTableInputFeeds())
-	if err != nil {
-		log.Fatal("CreateTable failed", err)
-	}
-	log.Printf("created table=%v\n", FeedTable)
 }
 
 func createProvidersTablesIfNotExists(client *dynamodb.Client) {
@@ -71,13 +65,13 @@ func createTableConfigIfNotExists(client *dynamodb.Client) {
 	fillConfigTable(client)
 }
 
-func ListTables(d *dynamodb.Client) {
+func PrintAllTables(d *dynamodb.Client) {
 	tables, err := d.ListTables(context.Background(), &dynamodb.ListTablesInput{})
 	if err != nil {
-		log.Fatal("ListTables failed", err)
+		log.Fatal("Cannot print tables...", err)
 	}
-	for wtf := range tables.TableNames {
-		println(wtf)
+	for table := range tables.TableNames {
+		println(table)
 	}
 }
 
@@ -104,25 +98,6 @@ func buildCreateTableInputSubscribers() *dynamodb.CreateTableInput {
 			},
 		},
 		TableName:   aws.String(SubscriberTable),
-		BillingMode: types.BillingModePayPerRequest,
-	}
-}
-
-func buildCreateTableInputFeeds() *dynamodb.CreateTableInput {
-	return &dynamodb.CreateTableInput{
-		AttributeDefinitions: []types.AttributeDefinition{
-			{
-				AttributeName: aws.String("UUID"),
-				AttributeType: types.ScalarAttributeTypeS,
-			},
-		},
-		KeySchema: []types.KeySchemaElement{
-			{
-				AttributeName: aws.String("UUID"),
-				KeyType:       types.KeyTypeHash,
-			},
-		},
-		TableName:   aws.String(FeedTable),
 		BillingMode: types.BillingModePayPerRequest,
 	}
 }
@@ -175,7 +150,7 @@ func buildCreateTableInputConfiguration() *dynamodb.CreateTableInput {
 func tableExists(d *dynamodb.Client, name string) bool {
 	tables, err := d.ListTables(context.Background(), &dynamodb.ListTablesInput{})
 	if err != nil {
-		log.Fatal("ListTables failed", err)
+		log.Fatal("Checking is table exists failed", err)
 	}
 	for _, n := range tables.TableNames {
 		if n == name {
@@ -186,7 +161,7 @@ func tableExists(d *dynamodb.Client, name string) bool {
 }
 func fillConfigTable(client *dynamodb.Client) {
 	svc := client
-	tableName := "MailNewsConfig"
+	tableName := MailNewsConfigTable
 
 	configMap := map[string]types.AttributeValue{
 		"Name":  &types.AttributeValueMemberS{Value: "LastFetchFeedsDate"},
