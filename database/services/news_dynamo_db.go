@@ -1,7 +1,6 @@
-package database
+package services
 
 import (
-	"MailNews.Subscriber/models"
 	"context"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
@@ -10,9 +9,19 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/google/uuid"
 	"log"
+	"time"
 )
 
-func AddFeed(feedItem models.FeedItem, client *dynamodb.Client, provider string) {
+type News struct {
+	UUID        string
+	Title       string
+	Link        string
+	PublishDate *time.Time
+	Provider    string
+	Sent        bool
+}
+
+func AddNews(news News, client *dynamodb.Client, provider string) {
 	svc := client
 	tableName := ""
 	switch provider {
@@ -27,10 +36,10 @@ func AddFeed(feedItem models.FeedItem, client *dynamodb.Client, provider string)
 	id := uuid.New().String()
 	feedMap := map[string]types.AttributeValue{
 		"UUID":        &types.AttributeValueMemberS{Value: id},
-		"Title":       &types.AttributeValueMemberS{Value: feedItem.Title},
-		"Link":        &types.AttributeValueMemberS{Value: feedItem.Link},
-		"PublishDate": &types.AttributeValueMemberS{Value: feedItem.PublishDate.Format("02-01-2006 15:01:05")},
-		"Sent":        &types.AttributeValueMemberBOOL{Value: feedItem.Sent},
+		"Title":       &types.AttributeValueMemberS{Value: news.Title},
+		"Link":        &types.AttributeValueMemberS{Value: news.Link},
+		"PublishDate": &types.AttributeValueMemberS{Value: news.PublishDate.Format("02-01-2006 15:01:05")},
+		"Sent":        &types.AttributeValueMemberBOOL{Value: news.Sent},
 	}
 
 	input := &dynamodb.PutItemInput{
@@ -44,7 +53,7 @@ func AddFeed(feedItem models.FeedItem, client *dynamodb.Client, provider string)
 	}
 }
 
-func FeedFromProviderExist(provider string, client *dynamodb.Client) bool {
+func NewsFromProviderExist(provider string, client *dynamodb.Client) bool {
 	//TODO I do not remember I need this method. Check it!
 	svc := client
 	tableName := FeedTable
@@ -70,7 +79,7 @@ func FeedFromProviderExist(provider string, client *dynamodb.Client) bool {
 	return true
 }
 
-func GetNewsToSend(provider string, client *dynamodb.Client) []models.FeedItem {
+func GetNewsToSend(provider string, client *dynamodb.Client) []News {
 	svc := client
 	tableName := AWSTable // TODO check all tables
 	filter := expression.Name("Provider").Equal(expression.Value(provider)).And(expression.Name("Sent").Equal(expression.Value(false)))
@@ -93,10 +102,10 @@ func GetNewsToSend(provider string, client *dynamodb.Client) []models.FeedItem {
 		panic(err)
 	}
 
-	var news []models.FeedItem
+	var news []News
 
 	for _, value := range out.Items {
-		item := models.FeedItem{}
+		item := News{}
 		err = attributevalue.UnmarshalMap(value, &news)
 		if err != nil {
 			println("wtf")

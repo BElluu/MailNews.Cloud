@@ -1,7 +1,6 @@
-package database
+package services
 
 import (
-	"MailNews.Subscriber/models"
 	"context"
 	"errors"
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -10,7 +9,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
-func GetConfigValue(configProperty string, client *dynamodb.Client) (*models.Config, error) {
+type Config struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+func GetConfigValue(configProperty string, client *dynamodb.Client) (*Config, error) {
 	svc := client
 	tableName := MailNewsConfigTable
 
@@ -27,7 +31,7 @@ func GetConfigValue(configProperty string, client *dynamodb.Client) (*models.Con
 	if err != nil {
 		return nil, errors.New(err.Error())
 	}
-	config := models.Config{}
+	config := Config{}
 	err = attributevalue.UnmarshalMap(configResult.Item, &config)
 	return &config, nil
 }

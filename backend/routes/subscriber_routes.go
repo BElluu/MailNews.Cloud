@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"MailNews.Subscriber/services"
+	"MailNews.Cloud/backend/services"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -37,7 +37,7 @@ func SubscriberRoute(router *gin.Engine) {
 			})
 			return
 		}
-		services.SendActivateEmail(email)
+		//TODO services.SendActivateEmail(email)
 		c.JSON(http.StatusOK, gin.H{
 			"Status": "Awesome. Activate your email :)",
 		})
