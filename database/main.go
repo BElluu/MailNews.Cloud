@@ -1,7 +1,12 @@
 package main
 
-import "fmt"
+import (
+	"MailNews.Cloud/backend/common"
+	dbservice "MailNews.Cloud/database/services"
+)
 
 func main() {
-	fmt.Println("hi")
+	client := common.CreateLocalClient()
+	dbservice.PrepareDatabaseTables(client)
+	dbservice.PrintAllTables(client)
 }

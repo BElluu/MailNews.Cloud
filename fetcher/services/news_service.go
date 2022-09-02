@@ -1,14 +1,14 @@
-package fetcher
+package services
 
 import (
-	"MailNews.Cloud/Backend/common"
-	dbservice "MailNews.Cloud/Database/services"
+	"MailNews.Cloud/backend/common"
+	dbservice "MailNews.Cloud/database/services"
 	"context"
 	"github.com/mmcdole/gofeed"
 	"time"
 )
 
-func FetchFeeds() {
+func FetchNews() {
 	rssParser("https://aws.amazon.com/blogs/aws/feed/", "Aws")
 	rssParser("https://cloudblog.withgoogle.com/products/gcp/rss/", "Google")
 	rssParser("https://azurecomcdn.azureedge.net/en-us/blog/feed/", "Azure")
