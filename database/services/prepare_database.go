@@ -165,7 +165,7 @@ func fillConfigTable(client *dynamodb.Client) {
 
 	configMap := map[string]types.AttributeValue{
 		"Name":  &types.AttributeValueMemberS{Value: "LastFetchFeedsDate"},
-		"Value": &types.AttributeValueMemberS{Value: time.Now().Format("02-01-2006 15:01:05")},
+		"Value": &types.AttributeValueMemberS{Value: (time.Now().AddDate(0, 0, -7)).Format("02-01-2006 15:01:05")},
 	}
 	configMap2 := map[string]types.AttributeValue{
 		"Name":  &types.AttributeValueMemberS{Value: "LastSendMailDate"},
