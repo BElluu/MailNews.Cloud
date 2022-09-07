@@ -1,7 +1,6 @@
-package database
+package services
 
 import (
-	"MailNews.Subscriber/models"
 	"context"
 	"errors"
 	"fmt"
@@ -13,7 +12,16 @@ import (
 	"log"
 )
 
-func AddSubscriber(subscriber models.Subscriber, client *dynamodb.Client) {
+type Subscriber struct {
+	UUID           string `json:"uuid"`
+	Email          string `json:"email"`
+	ActivateURL    string `json:"activate-url"`
+	UnSubscribeURL string `json:"un-subscribe-url"`
+	IsActive       bool   `json:"is-active"`
+	CreatedDate    string `json:"created-date"`
+}
+
+func AddSubscriber(subscriber Subscriber, client *dynamodb.Client) {
 	svc := client
 	tableName := SubscriberTable
 
@@ -109,7 +117,7 @@ func GetSubscriber(uuid string, email string, client *dynamodb.Client) (*dynamod
 	return subscriberResult, nil
 }
 
-func GetSubscribers(activeSubscribers bool, client *dynamodb.Client) []models.Subscriber {
+func GetSubscribers(activeSubscribers bool, client *dynamodb.Client) []Subscriber {
 	svc := client
 	tableName := SubscriberTable
 	filter := expression.Name("IsActive").Equal(expression.Value(activeSubscribers))
@@ -132,10 +140,10 @@ func GetSubscribers(activeSubscribers bool, client *dynamodb.Client) []models.Su
 		panic(err)
 	}
 
-	var subscribers []models.Subscriber
+	var subscribers []Subscriber
 
 	for _, value := range out.Items {
-		item := models.Subscriber{}
+		item := Subscriber{}
 		err = attributevalue.UnmarshalMap(value, &item)
 		if err != nil {
 			println("wtf")
@@ -149,7 +157,7 @@ func GetSubscribers(activeSubscribers bool, client *dynamodb.Client) []models.Su
 	return subscribers
 }
 
-func GetSubscriber2(email string, client *dynamodb.Client) models.Subscriber {
+func GetSubscriber2(email string, client *dynamodb.Client) Subscriber {
 	svc := client
 	tableName := SubscriberTable
 	filter := expression.Name("Email").Equal(expression.Value(email))
@@ -173,7 +181,7 @@ func GetSubscriber2(email string, client *dynamodb.Client) models.Subscriber {
 		panic(err)
 	}
 
-	var subscriber models.Subscriber
+	var subscriber Subscriber
 	for _, value := range out.Items {
 		err = attributevalue.UnmarshalMap(value, &subscriber)
 		if err != nil {

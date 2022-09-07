@@ -1,23 +1,28 @@
-package services
+package sender
 
 import (
-	"MailNews.Subscriber/common"
-	"MailNews.Subscriber/database"
+	"MailNews.Cloud/backend/common"
+	dbservice "MailNews.Cloud/database/services"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ses"
 	"log"
 )
 
+type Recipient struct {
+	ToEmails []string
+	CcEmails []string
+}
+
 func SendActivateEmail(toEmail string) {
 	client := common.CreateLocalClient()
 
-	subscriber := database.GetSubscriber2(toEmail, client)
+	subscriber := dbservice.GetSubscriber2(toEmail, client)
 
 	body := "There is your activate link:" + subscriber.ActivateURL
 	var recip = []*string{&subscriber.Email}
 	err := SendEmailSES(body, "MailNews.Cloud - Activate newsletter.", "xxx", recip)
 	if err != nil {
-		err := database.DeleteSubscriber(subscriber.UUID, subscriber.Email, client)
+		err := dbservice.DeleteSubscriber(subscriber.UUID, subscriber.Email, client)
 		if err != nil {
 			return // PANIC - log it!
 		}
